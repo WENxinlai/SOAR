@@ -4,10 +4,25 @@ import os
 import torch
 import time
 from torch.profiler import profile, record_function, ProfilerActivity
-
+import logging
+from viztracer import VizTracer
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+from torch_scatter import segment_csr
+class Timer:
+    def __init__(self):
+        self.start_time = 0
+        self.end_time = 0
+    
+    def start(self):
+        torch.cuda.synchronize()
+        self.start_time = time.time()
 
-
+    def end(self):
+        torch.cuda.synchronize()
+        self.end_time = time.time()
+        return self.end_time - self.start_time
+    
 # standard VQ
 def kmeans(data, num_clusters, max_iters=100, tolerance=1e-4):
     # Step 1: Initialize cluster centers randomly from the dataset
@@ -17,7 +32,8 @@ def kmeans(data, num_clusters, max_iters=100, tolerance=1e-4):
     # assignments = torch.zeros(data.size(0), dtype=torch.long)
     assignments = torch.zeros(data.size(0), dtype=torch.long, device=data.device)
 
-    for i in range(max_iters):
+    iters = 0
+    while iters < max_iters:
         # Step 2: Assign each vector to the nearest cluster center using Euclidean
         distances = torch.cdist(data, cluster_centers, p=2)  # 计算欧几里得距离
         assignments = distances.argmin(dim=1)
@@ -31,14 +47,42 @@ def kmeans(data, num_clusters, max_iters=100, tolerance=1e-4):
         new_centers = torch.stack([
             data[assignments == k].mean(dim=0) if (assignments == k).any() else cluster_centers[k]
             for k in range(num_clusters)])
+        
+        # print('new_center sum:', torch.sum(new_centers))
+        # print('new_center:', new_centers[0])
+
+        # New Step 3: Update cluster centers by tensor operators, avoid for-loop. e.g. 'for k in range(num_clusters)'
+        new_centers = cluster_centers.clone()
+
+        # logging.info('Assignment: ', assignments)
+        aggsignmentsSorted = torch.sort(assignments)
+        uniqueAssignments = torch.unique(aggsignmentsSorted.values)
+
+        # the number of data points in each cluster represented in the format of accumulative sum
+        dataPointNumInEachClusterAccumlate = torch.cat([torch.tensor([0], device=device), torch.searchsorted(aggsignmentsSorted.values, uniqueAssignments, right=True)])
+        # the cluster is the cluster that has data points
+        dataPointNumInEachCluster = torch.diff(dataPointNumInEachClusterAccumlate)
+
+        dataPointsTobeAggregated = data[aggsignmentsSorted.indices]
+        # print('dataPointsTobeAggregated:', dataPointsTobeAggregated[0])
+        dataPointAggregated = segment_csr(dataPointsTobeAggregated, dataPointNumInEachClusterAccumlate, reduce="sum")
+        # print('dataPointAggregated Sum:', dataPointAggregated[0])
+        dataPointAggregated = dataPointAggregated / dataPointNumInEachCluster.unsqueeze(1)
+        # print('dataPointAggregated:', dataPointAggregated[0])
+        new_centers[uniqueAssignments] = dataPointAggregated
+        # print('uniqueAssignments:', uniqueAssignments)
+        # print('new_center1:', new_centers[0])
+        # print('new_center1 sum:', torch.sum(new_centers))
+
         # new_centers 的形状是 (num_clusters, data_dim)
         # Step 4: Check for convergence by comparing new and old centers
         center_shift = torch.norm(new_centers - cluster_centers, dim=1).max()
         cluster_centers = new_centers
         if center_shift < tolerance:
-            print(f"Converged in {i + 1} iterations")
+            # logging.info(f"Converged in {iters + 1} iterations")
             break
-
+        iters += 1
+    logging.info(f"KMeans converged in {iters + 1} iterations")
     # Construct inverted index over π; for each partition i, store the indices of datapoints in that partition
     inverted_index = {k: (assignments == k).nonzero(as_tuple=True)[0].to(data.device) for k in range(num_clusters)}
     return cluster_centers, assignments, inverted_index
@@ -259,59 +303,6 @@ def search_single(query, cluster_centers, data_inverted_index, data, k=100):
     return nearest_neighbors, top_k_distances
 
 
-
-
-download_path = "glove-100-angular.hdf5"
-# download_path = "/data/coding/glove-100-angular.hdf5"
-# Open the downloaded file with h5py
-glove_h5py = h5py.File(download_path, "r")
-
-dataset = glove_h5py['train']
-queries = glove_h5py['test']
-# Press the green button in the gutter to run the script.
-true_neighbors = glove_h5py['neighbors']
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
-
-# 将 h5py 数据集转换为 Tensor
-
-
-dataset10w = torch.tensor(dataset[:100000]).to(device)
-queries = torch.tensor(queries[:]).to(device)
-true_neighbors = torch.tensor(true_neighbors[:]).to(device)
-
-# start = time.time()
-# cluster_centers, primary_assignments, primary_inverted_index = kmeans(dataset10w, num_clusters=2000, max_iters=200)
-# # cluster_centers, primary_assignments, primary_inverted_index = kmeans_anisotropic(dataset10w, num_clusters=200,
-# # max_iters=200)
-# end = time.time()
-# print(f"Time:{end - start}s")
-#
-# primary_centroids = cluster_centers[primary_assignments]  # 形状为 (n, d)
-#
-# 计算每个数据点到其主中心的残差
-# normalized_residuals = compute_normalized_residual(dataset10w, primary_centroids)
-# secondary_assignments = compute_secondary_assignments(dataset10w, cluster_centers,
-#                                                       primary_assignments, normalized_residuals,
-#                                                       primary_inverted_index, lambda_param=1.0)
-
-with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-             on_trace_ready=torch.profiler.tensorboard_trace_handler('./log')) as prof:
-    with record_function("KMeans Clustering"):
-        cluster_centers, primary_assignments, primary_inverted_index = kmeans(dataset10w, num_clusters=200,
-                                                                              max_iters=200)
-
-    with record_function("Compute Residuals"):
-        primary_centroids = cluster_centers[primary_assignments]
-        normalized_residuals = compute_normalized_residual(dataset10w, primary_centroids)
-
-    with record_function("Secondary Assignments"):
-        secondary_assignments = compute_secondary_assignments(dataset10w, cluster_centers,
-                                                              primary_assignments, normalized_residuals,
-                                                              primary_inverted_index, lambda_param=1.0)
-# search
-
-
 def compute_recall(neighbors, true_neighbors):
     nearest_neighbors_np = neighbors.numpy()
     # Step 2: Find the common elements
@@ -404,14 +395,102 @@ def evaluate_precision_tensor(queries, true_neighbors, cluster_centers, primary_
     average_recall = sum(recalls) / len(recalls)
     return average_recall, recalls
 
-queries = queries[:100]
-true_neighbors1 = true_neighbors[:100]
-average_recall, recalls = evaluate_precision_tensor(queries, true_neighbors1, cluster_centers, primary_inverted_index,
-                                             dataset10w, s=100000, k=100)
-print(average_recall)
-print(recalls)
 
 
+
+
+if __name__ == '__main__':
+    timer = Timer()
+    timer.start()
+    download_path = "glove-100-angular.hdf5"
+    # download_path = "/data/coding/glove-100-angular.hdf5"
+    # Open the downloaded file with h5py
+    glove_h5py = h5py.File(download_path, "r")
+
+    dataset = glove_h5py['train']
+    queries = glove_h5py['test']
+    # Press the green button in the gutter to run the script.
+    true_neighbors = glove_h5py['neighbors']
+
+    # See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+    # 将 h5py 数据集转换为 Tensor
+
+
+    dataset10w = torch.tensor(dataset[:100000]).to(device)
+    queries = torch.tensor(queries[:]).to(device)
+    true_neighbors = torch.tensor(true_neighbors[:]).to(device)
+    tm = timer.end()
+    logging.info("Data loaded successfully !! Elapsed time: {:.2f} s".format(tm))
+
+
+    
+    # with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+    #             on_trace_ready=torch.profiler.tensorboard_trace_handler('./log1')) as prof:
+    #     with record_function("KMeans Clustering"):
+    #         timer.start()
+    #         cluster_centers, primary_assignments, primary_inverted_index = kmeans(dataset10w, num_clusters=200,
+    #                                                                             max_iters=200)
+    #         tm = timer.end()
+    #         logging.info("KMeans clustering completed !! Elapsed time: {} s".format(tm))
+
+    #     with record_function("Compute Residuals"):
+    #         timer.start()
+    #         primary_centroids = cluster_centers[primary_assignments]
+    #         normalized_residuals = compute_normalized_residual(dataset10w, primary_centroids)
+    #         tm = timer.end()
+    #         logging.info("Compute residuals completed !! Elapsed time: {} s".format(tm))
+
+
+    #     with record_function("Secondary Assignments"):
+    #         timer.start()
+    #         secondary_assignments = compute_secondary_assignments(dataset10w, cluster_centers,
+    #                                                             primary_assignments, normalized_residuals,
+    #                                                             primary_inverted_index, lambda_param=1.0)
+    #         tm = timer.end()
+    #         logging.info("Secondary assignments completed !! Elapsed time: {} s".format(tm))
+    
+    tracer = VizTracer()
+    timer.start()
+    tracer.start()
+    cluster_centers, primary_assignments, primary_inverted_index = kmeans(dataset10w, num_clusters=200, max_iters=200)
+    tracer.save('kemans.json')
+    tm = timer.end()
+    logging.info("KMeans clustering completed !! Elapsed time: {} s".format(tm))
+
+    timer.start()
+    primary_centroids = cluster_centers[primary_assignments]
+    tm = timer.end()
+    logging.info("Compute residuals completed !! Elapsed time: {} s".format(tm))
+
+    timer.start()
+    tracer.start()
+    normalized_residuals = compute_normalized_residual(dataset10w, primary_centroids)
+    tracer.save('compute_normalized_residuals.json')
+    tm = timer.end()
+    logging.info("Compute normalized residuals completed !! Elapsed time: {} s".format(tm))
+
+    timer.start()
+    tracer.start()
+    secondary_assignments = compute_secondary_assignments(dataset10w, cluster_centers,
+                                                                primary_assignments, normalized_residuals,
+                                                                primary_inverted_index, lambda_param=1.0)
+    tracer.save('compute_secondary_assignments.json')
+    tm = timer.end()
+    logging.info("Secondary assignments completed !! Elapsed time: {} s".format(tm))
+
+    timer.start()
+    # search
+    queries = queries[:100]
+    true_neighbors1 = true_neighbors[:100]
+    average_recall, recalls = evaluate_precision_tensor(queries, true_neighbors1, cluster_centers, primary_inverted_index,
+                                                dataset10w, s=100000, k=100)
+    tm = timer.end()
+    logging.info("Search completed !! Elapsed time: {} s".format(tm))
+    logging.info(f"Average Recall: {average_recall}, Recalls: {recalls}")
+    # print(average_recall)
+    # print(recalls)
+    
 # def compute_recall(neighbors, true_neighbors):
 #     total = 0
 #     for gt_row, row in zip(true_neighbors, neighbors):
