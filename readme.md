@@ -1,44 +1,44 @@
-## 1.×Ô¼ºÕûÀíµÄÂÛÎÄmain idea:
-Õû¸ö¹ı³ÌÒÀÈ»×ñÑ­kmeansÁ÷³Ì£º
-![alt text](img\image11.png)
-µ«ËûÃÇÓÅ»¯ÁËÖĞĞÄ·ÖÅäºÍ¸üĞÂµÄlossº¯Êı£º
-![alt text](img\image12.png)
+## 1.è‡ªå·±æ•´ç†çš„è®ºæ–‡main idea:
+æ•´ä¸ªè¿‡ç¨‹ä¾ç„¶éµå¾ªkmeansæµç¨‹ï¼š
+![alt text](img/image11.png)
+ä½†ä»–ä»¬ä¼˜åŒ–äº†ä¸­å¿ƒåˆ†é…å’Œæ›´æ–°çš„losså‡½æ•°ï¼š
+![alt text](img/image12.png)
 
-![alt text](img\image.png)
-¼ÙÉè q ¾ùÔÈ·Ö²¼ÔÚµ¥Î»ÇòÃæÉÏµÄÇé¿ö¡£
-²¢·ÇËùÓĞµÄ q ºÍ x ¶Ô¶¼Í¬ÑùÖØÒª£º¶ÔÓÚ x ¶øÑÔ£¬×¼È·Á¿»¯<q1; x>µÄÄÚ»ı±È<q2; x> »ò <q3; x> ¸üÖØÒª£¬
-ÒòÎª<q1; x>µÄÄÚ»ı¸ü´ó£¬Òò´Ë¸üÓĞ¿ÉÄÜÊÇ×î´óÖµ£»
-![alt text](img\image1.png)
-![alt text](img\image2.png)
-![alt text](img\image3.png)
-?q,x?=¨O¨Oq¨O¨O?¨O¨Ox¨O¨O?cos(¦È)
-ÆäÖĞ£¬¦È ÊÇÏòÁ¿ q ºÍ x Ö®¼äµÄ¼Ğ½Ç¡£
-¦È:=arccos(¨O¨Ox¨O¨Ot?)
-ÕâÀïµÄ t ÊÇÄÚ»ı ?q,x? µÄÖµ
-![alt text](img\image4.png)
+![alt text](img/image.png)
+å‡è®¾ q å‡åŒ€åˆ†å¸ƒåœ¨å•ä½çƒé¢ä¸Šçš„æƒ…å†µã€‚
+å¹¶éæ‰€æœ‰çš„ q å’Œ x å¯¹éƒ½åŒæ ·é‡è¦ï¼šå¯¹äº x è€Œè¨€ï¼Œå‡†ç¡®é‡åŒ–<q1; x>çš„å†…ç§¯æ¯”<q2; x> æˆ– <q3; x> æ›´é‡è¦ï¼Œ
+å› ä¸º<q1; x>çš„å†…ç§¯æ›´å¤§ï¼Œå› æ­¤æ›´æœ‰å¯èƒ½æ˜¯æœ€å¤§å€¼ï¼›
+![alt text](img/image1.png)
+![alt text](img/image2.png)
+![alt text](img/image3.png)
+?q,x?=âˆ£âˆ£qâˆ£âˆ£?âˆ£âˆ£xâˆ£âˆ£?cos(Î¸)
+å…¶ä¸­ï¼ŒÎ¸ æ˜¯å‘é‡ q å’Œ x ä¹‹é—´çš„å¤¹è§’ã€‚
+Î¸:=arccos(âˆ£âˆ£xâˆ£âˆ£t?)
+è¿™é‡Œçš„ t æ˜¯å†…ç§¯ ?q,x? çš„å€¼
+![alt text](img/image4.png)
 
-<mark>**×îÖÕµÄ¸÷ÏòÒìĞÔlossÊÇ eta ³ËÒÔÆ½ĞĞ·ÖÁ¿¼ÓÉÏ´¹Ö±·ÖÁ¿**¡£
+<mark>**æœ€ç»ˆçš„å„å‘å¼‚æ€§lossæ˜¯ eta ä¹˜ä»¥å¹³è¡Œåˆ†é‡åŠ ä¸Šå‚ç›´åˆ†é‡**ã€‚
 
-·ÖÊı¸ĞÖªËğÊ§º¯ÊıµÄÒ»¸öÖ±½Ó½á¹ûÊÇ£¬Ä¿±ê»á¸ù¾İµã¶ÔµÄÖØÒªĞÔ½øĞĞÈ¨ºâ£¬´Ó¶ø½µµÍ¶ÔÅÅÃû¿¿Ç°µÄÅä¶ÔµÄ¹À¼ÆÎó²î¡£
+åˆ†æ•°æ„ŸçŸ¥æŸå¤±å‡½æ•°çš„ä¸€ä¸ªç›´æ¥ç»“æœæ˜¯ï¼Œç›®æ ‡ä¼šæ ¹æ®ç‚¹å¯¹çš„é‡è¦æ€§è¿›è¡Œæƒè¡¡ï¼Œä»è€Œé™ä½å¯¹æ’åé å‰çš„é…å¯¹çš„ä¼°è®¡è¯¯å·®ã€‚
 
-## 2.googleÏîÄ¿´úÂë
+## 2.googleé¡¹ç›®ä»£ç 
 https://github.com/google-research/google-research/tree/master/scann
 
-anisotropic lossµÄºËĞÄÊµÏÖÔÚscann\partitioning\anisotropic.cc
+anisotropic lossçš„æ ¸å¿ƒå®ç°åœ¨scann\partitioning\anisotropic.cc
 
-¹Ø¼ü²ÎÊı£ºeta,ĞèÒªnormalize dataset,Ã¿¸öÊı¾İµã²ÅÓĞÒ»ÑùµÄetaÖµ¡£
+å…³é”®å‚æ•°ï¼šeta,éœ€è¦normalize dataset,æ¯ä¸ªæ•°æ®ç‚¹æ‰æœ‰ä¸€æ ·çš„etaå€¼ã€‚
 
-etaÇó½âµÄË¼Â·£º
-![alt text](img\image7.png)
-![alt text](img\image8.png)
-\scann\hashes\internal\stacked_quantizers.h£º
-![alt text](img\image9.png)
-![alt text](img\image10.png)
+etaæ±‚è§£çš„æ€è·¯ï¼š
+![alt text](img/image7.png)
+![alt text](img/image8.png)
+\scann\hashes\internal\stacked_quantizers.hï¼š
+![alt text](img/image9.png)
+![alt text](img/image10.png)
 
-![alt text](img\image6.png)
-Êµ¼ÊËûÃÇµÄ´úÂëÖĞ¼ÆËãµÄ£º
-![alt text](img\image5.png)
-ÔÚReducePartitionº¯ÊıÀï¡£
+![alt text](img/image6.png)
+å®é™…ä»–ä»¬çš„ä»£ç ä¸­è®¡ç®—çš„ï¼š
+![alt text](img/image5.png)
+åœ¨ReducePartitionå‡½æ•°é‡Œã€‚
 
 
 
