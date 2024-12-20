@@ -11,10 +11,9 @@
 ![alt text](img/image1.png)
 ![alt text](img/image2.png)
 ![alt text](img/image3.png)
-?q,x?=∣∣q∣∣?∣∣x∣∣?cos(θ)
+<q,x>=∣∣q∣∣∣∣x∣∣cos(θ)
 其中，θ 是向量 q 和 x 之间的夹角。
-θ:=arccos(∣∣x∣∣t?)
-这里的 t 是内积 ?q,x? 的值
+
 ![alt text](img/image4.png)
 
 <mark>**最终的各向异性loss是 eta 乘以平行分量加上垂直分量**。
