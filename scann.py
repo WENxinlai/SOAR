@@ -246,8 +246,6 @@ dataset10w = torch.tensor(dataset[:100000]).to(device)
 dataset_norms = torch.norm(dataset10w, p=2, dim=1, keepdim=True)  # Compute L2 norm of each data point
 dataset_normalized = dataset10w / dataset_norms  # Normalize each data point
 
-with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-             on_trace_ready=torch.profiler.tensorboard_trace_handler('./log')) as prof:
-    with record_function("kmeans_anisotropic"):
-        cluster_centers, primary_assignments, primary_inverted_index = kmeans_anisotropic(dataset10w, num_clusters=200,
-                                                                              max_iters=200)
+cluster_centers, primary_assignments, primary_inverted_index = (
+    kmeans_anisotropic(dataset_normalized, num_clusters=200, max_iters=200)) # here use  dataset_normalized!! instead of dataset10w 
+
