@@ -60,4 +60,4 @@ eta的计算：
 目前采取的办法是**对candidate_vectors这个矩阵进行分块**，分块计算分数，最后合并取topk。解决了OOM的问题
 
 
-目前实现批量查询的函数有**search_batched_chunked_matmul_mixed_precision_2unique**和**search_batched_chunked_matmul_mixed_precision_csr_newly_optimized**，两个函数去候选点的方式不同，但目前运行时间差不多。
+目前实现批量查询的函数有**search_batched_chunked_matmul_mixed_precision_2unique**和**search_batched_chunked_matmul_mixed_precision_csr_newly_optimized**，两个函数取候选点的方式不同，但目前运行时间差不多。
